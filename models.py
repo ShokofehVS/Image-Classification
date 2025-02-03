@@ -10,16 +10,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-# class BinaryResNet(nn.Module):
-#     def __init__(self):
-#         super(BinaryResNet, self).__init__()
-#         self.resnet = ResNet18(num_classes=2)  # 2 classes: cats and dogs
-#         self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1,
-#                                       bias=False)  # Modify input to 1 channel
-#
-#     def forward(self, x):
-#         return self.resnet(x)
+"""
+This part is extracted from the GitHub repository under this link:
+https://github.com/kuangliu/pytorch-cifar/blob/master/models/resnet.py
+ResNet model has been modified to match our requirements, including grayscale images (1 channel), number of classes (2)
+We only keep the ResNet18 because it has fewer parameters, making it faster to train; 
+especially useful if there are limited compute resources.
+"""
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -49,7 +46,6 @@ class BasicBlock(nn.Module):
         return out
 
 
-# Modify input to 1 channel
 class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=2):
         super(ResNet, self).__init__()
@@ -92,5 +88,3 @@ def test():
     net = ResNet18()
     y = net(torch.randn(1, 3, 32, 32))
     print(y.size())
-
-# test()
