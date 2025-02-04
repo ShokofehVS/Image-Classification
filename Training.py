@@ -107,8 +107,8 @@ def main():
     best_model_path = ""
 
     # (1)
-    # We apply specific loss function for binary classification purposes that handles Sigmoid activation automatically;
-    # alternatively one can use CrossEntropyLoss function that is general for multi-class classification
+    # We can apply specific loss function for binary classification purposes that handles Sigmoid activation automatically;
+    # alternatively we can use CrossEntropyLoss function that is general for multi-class classification
     # We apply Adam (Adaptive Moment Estimation) that automatically adjusts the learning rate for each parameter
     # Learning rate = 0.001 is chosen to avoid making training unstable (e.g. lr = 0.01) or slow (e.g. lr = 0.00001)
     criterion = torch.nn.CrossEntropyLoss()
