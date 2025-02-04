@@ -6,7 +6,7 @@ We rely on ResNet model based on the [ResNet model](https://github.com/kuangliu/
 
 ## Installation
 First you need to ensure that all packages have been installed.
-+ See `requirements.txt`
+See `requirements.txt`
 + torch>=2.4.1
 + torchvision>=0.19.1
 + matplotlib>=3.7.1
@@ -29,9 +29,9 @@ If you have all dependencies installed:
 ## Dataset
 [Animal Classification Dataset (Cats, Dogs, Horses)](https://www.kaggle.com/datasets/arifmia/animal/data) involves three common animal categories: Cat, Dog, and Horse.  It includes a total of 1,763 images split into three subsets: Train, Validation (Val), and Test. 
 
-# Image Classification Steps:
+# Image Classification Steps
 ## Step 1: Preprocessing
-After accommodating an extracted dataset into a **Dataset** folder, we remove **horse** category; this can be done by writing a code in which define exclusively two categories of **dogs** and **cats**:
+After accommodating an extracted dataset into a **Dataset** folder, we remove **horse** category; this can be done by writing a code in which define exclusively two categories of **dogs** and **cats**.
 
 Further, we transform the training dataset composing of images of cats and dogs into 64x64 pixels and grayscale (1 channel):
 
@@ -50,7 +50,7 @@ To run the offline preprocessing step:
 Despite an offline preprocessing, we additionally can preprocess online in ``Training.py`` before starting training. 
 
 ## Step 2: Training
-We rely on ResNet model based on the [ResNet model](https://github.com/kuangliu/pytorch-cifar/blob/master/models/resnet.py); while configuring it to match out preprocessed input (e.i., grayscale images (1 channel)) and the number of classes (cats and dogs, 2). We only keep the ResNet18 because it has fewer parameters, making it faster to train; 
+We rely on ResNet model based on the [ResNet model](https://github.com/kuangliu/pytorch-cifar/blob/master/models/resnet.py); while configuring it to match our preprocessed input (e.i., grayscale images (1 channel)) and the number of classes (cats and dogs, 2). We only keep the ResNet18 because it has fewer parameters, making it faster to train; 
 especially useful when there are limited compute resources. 
 
 
@@ -74,11 +74,11 @@ To run the testing phase:
 
 To sum up, we observe that with confidence 0.5527, a true label **dog** is set for an input in the testing dataset.
 
-## Challenges:
-Throughout the implementation, we notice some challenges especially in dealing with transformed images in model training. We configure the model to accept 64x64 pixels images. Current implementation gets input with 32x32 pixels. The code is still under revision to fix this problem.
+## Challenges
+Throughout the implementation, we notice some challenges especially in dealing with transformed images in model training. We configured the model to accept 64x64 pixels images, but got an error `RuntimeError: mat1 and mat2 shapes cannot be multiplied (1x2048 and 512x2)`. Current implementation gets an input with 32x32 pixels. The code is still under revision to fix this problem.
 
-## Future Directions:
-In our model training, we set hyperpyrameters than can be improved experimentally and applying larger set of data:
+## Future Directions
+In our model training, we set hyperpyrameters than can be improved experimentally and applying larger set of data (add that, we mention in the code as a comment why to choose the following parameters):
 
 Learning rate (lr)        = 0.001
 
