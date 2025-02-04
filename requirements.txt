@@ -3,3 +3,5 @@ torchvision>=0.19.1
 matplotlib>=3.7.1
 scikit-learn>=1.1.1
 Pillow>=9.2.0
+setuptools>=65.5.0
+torchmetrics>=1.5.2

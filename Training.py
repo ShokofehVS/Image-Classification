@@ -84,7 +84,7 @@ def main():
     # (2)
     transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),
-        transforms.Resize((64, 64)),
+        transforms.Resize((32, 32)),
         transforms.ToTensor()
     ])
     # ImageFolder: help load dataset structured into class folders and apply transformation, it works
@@ -92,7 +92,7 @@ def main():
     # DataLoader:  help load, batch and shuffle ImageFolder, while avoiding loading everything once into memory
     # batch_size=32 is a hyperparameter balancing Memory Usage & Training Speed
     train_dataset = ImageFolder(root="Dataset/train", transform=transform)
-    train_loader  = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    train_loader  = DataLoader(train_dataset, batch_size=64, shuffle=True)
 
     # (3)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
