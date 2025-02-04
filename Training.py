@@ -10,6 +10,7 @@ from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
 from models import ResNet18
 from torch.utils.tensorboard import SummaryWriter
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 warnings.filterwarnings("ignore")
 
@@ -63,8 +64,6 @@ def plot_model(epochs_list, losses, accuracies, precisions, recalls, f1_scores):
         plt.savefig(plot_path)
         plt.close()
 
-        print(f"Saved plot: {plot_path}")
-
 
 # Main function to train the model on the cats vs. dogs binary classification task
 def main():
@@ -92,7 +91,7 @@ def main():
     # DataLoader:  help load, batch and shuffle ImageFolder, while avoiding loading everything once into memory
     # batch_size=32 is a hyperparameter balancing Memory Usage & Training Speed
     train_dataset = ImageFolder(root="Dataset/train", transform=transform)
-    train_loader  = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    train_loader  = DataLoader(train_dataset, batch_size=4, shuffle=True)
 
     # (3)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -112,7 +111,7 @@ def main():
     # alternatively one can use CrossEntropyLoss function that is general for multi-class classification
     # We apply Adam (Adaptive Moment Estimation) that automatically adjusts the learning rate for each parameter
     # Learning rate = 0.001 is chosen to avoid making training unstable (e.g. lr = 0.01) or slow (e.g. lr = 0.00001)
-    criterion = torch.nn.BCEWithLogitsLoss()
+    criterion = torch.nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # 4: start of the training process within 10 epochs which consists of
@@ -153,29 +152,16 @@ def main():
             running_loss += loss.item()
 
             # (4.5)
-            # Convert logits/ outputs to probabilities with sigmoid
-            probablity = torch.sigmoid(outputs)
-
-            # Convert probabilities to binary predictions (0 or 1) with default threshold 0.5
-            predictions = (probablity > 0.5).float()
+            _, preds = torch.max(outputs, 1)
+            all_predict.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
 
         # (4.6)
-        # Create metric objects for accuracy, precision, and recall with threshold (float, default 0.5)
-        # threshold for converting input into predicted labels for each sample.
-        accuracy_mt  = torchmetrics.classification.BinaryAccuracy()
-        precision_mt = torchmetrics.classification.BinaryPrecision()
-        recall_mt    = torchmetrics.classification.BinaryRecall()
-
-        # Then, we need to update metrics with predictions and true labels
-        accuracy_mt.update(predictions, labels)
-        precision_mt.update(predictions, labels)
-        recall_mt.update(predictions, labels)
+        accuracy  = accuracy_score(all_labels, all_predict)
+        precision = precision_score(all_labels, all_predict, average="binary")
+        recall    = recall_score(all_labels, all_predict, average="binary")
         avg_loss  = running_loss / len(train_loader)
 
-        # Finally, compute the evaluation metrics
-        accuracy  = accuracy_mt.compute()
-        precision = precision_mt.compute()
-        recall    = recall_mt.compute()
 
         # (4.7)
         epochs_list.append(epoch + 1)

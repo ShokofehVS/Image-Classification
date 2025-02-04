@@ -75,7 +75,7 @@ To run the testing phase:
 To sum up, we observe that with confidence 0.5527, a true label **dog** is set for an input in the testing dataset.
 
 ## Challenges:
-Throughout the implementation, we notice some challenges especially in dealing with transformed images in model training. We configure the model to accept 1 channel image with 64x64 pixels.
+Throughout the implementation, we notice some challenges especially in dealing with transformed images in model training. We configure the model to accept 64x64 pixels images. Current implementation gets input with 32x32 pixels. The code is still under revision to fix this problem.
 
 ## Future Directions:
 In our model training, we set hyperpyrameters than can be improved experimentally and applying larger set of data:
@@ -87,4 +87,4 @@ Number of epochs (epochs) = 10
 batch size                = 64
 
 
-We run the experiment on an Intel(R) Core i7-1185 CPU at 3.00 GHz × 8 running Ubuntu 20.04 LTS with 31 GB memory.
+We run the experiment on an Intel(R) Core i7-1185 CPU at 3.00 GHz × 8 running Ubuntu 20.04 LTS with 31 GB memory. We plan to run the experiment on GPU and apply PyTorch Lightning to simplify training in our future work. 

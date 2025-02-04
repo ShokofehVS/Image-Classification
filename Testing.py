@@ -1,9 +1,11 @@
 # Import libraries
 import torch
 import torchvision.transforms as transforms
+import warnings
 from models import ResNet18
 from PIL import Image
 
+warnings.filterwarnings("ignore")
 
 # Load the trained model from checkpoint
 def load_model(checkpoint_path):
