@@ -4,16 +4,17 @@ import os
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import torch.optim as optim
+import torchmetrics
+import warnings
 from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
 from models import ResNet18
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from torch.utils.tensorboard import SummaryWriter
 
-
+warnings.filterwarnings("ignore")
 
 # Logging evaluation metrics during training with TensorBoard and storing in "logs" folder
-def log_model(epoch, avg_loss, accuracy, precision, recall, f1):
+def log_model(epoch, avg_loss, accuracy, precision, recall):
     # 1: create TensorBoard writer by setting its path
     # 2: log evaluation metrics to TensorBoard
 
@@ -22,11 +23,10 @@ def log_model(epoch, avg_loss, accuracy, precision, recall, f1):
     writer = SummaryWriter(log_dir=log_dir)
 
     # (2)
-    writer.add_scalar("Loss/train", avg_loss, epoch + 1)
-    writer.add_scalar("Accuracy/train", accuracy, epoch + 1)
-    writer.add_scalar("Precision/train", precision, epoch + 1)
-    writer.add_scalar("Recall/train", recall, epoch + 1)
-    writer.add_scalar("F1-Score/train", f1, epoch + 1)
+    writer.add_scalar("Loss of training", avg_loss, epoch + 1)
+    writer.add_scalar("Accuracy of training", accuracy, epoch + 1)
+    writer.add_scalar("Precision of training", precision, epoch + 1)
+    writer.add_scalar("Recall of training", recall, epoch + 1)
 
 
 # Plotting the loss curves and other evaluation metrics with matplotlib and storing in "plots" folder
@@ -46,13 +46,12 @@ def plot_model(epochs_list, losses, accuracies, precisions, recalls, f1_scores):
         "Accuracy": accuracies,
         "Precision": precisions,
         "Recall": recalls,
-        "F1-Score": f1_scores
     }
 
     # (3)
     for metric_name, values in metrics.items():
         plt.figure(figsize=(8, 6))
-        plt.plot(epochs_list, values, marker="o", linestyle="-", label=metric_name, color="b")
+        plt.plot(epochs_list, values, marker="o", linestyle="-", label=metric_name, color="r")
         plt.xlabel("Epochs")
         plt.ylabel(metric_name)
         plt.title(f"{metric_name} over Epochs")
@@ -60,7 +59,7 @@ def plot_model(epochs_list, losses, accuracies, precisions, recalls, f1_scores):
         plt.grid()
 
         # (4)
-        plot_path = os.path.join(plot_dir, f"{metric_name.lower()}.png")
+        plot_path = os.path.join(plot_dir, f"{metric_name}.png")
         plt.savefig(plot_path)
         plt.close()
 
@@ -121,7 +120,7 @@ def main():
     # 4.2: move Data and labels to the Device
     # 4.3: core backpropagation and optimization process in PyTorch
     # 4.4: calculation of loss to then get the average in each epoch
-    # 4.5: find predicted class with highest logit value
+    # 4.5: find predicted class for a binary classification
     # 4.6: calculate the evaluation metrics on predictions and true labels
     # 4.7: store the evaluation metrics' result for further presentation
 
@@ -141,7 +140,8 @@ def main():
             # We perform the forward pass and defines how the input image is transformed into
             # the outputs that are logits or predicted values from the model.
             outputs = model(images)
-
+            # After executing model on images, we got the output and to compare with true labels, we use the previously
+            # defined loss function.
             loss = criterion(outputs, labels)
             # Here after setting gradient to zero in optimizer.zero_grad(), we calculate the gradient newly
             # for the current batch
@@ -153,16 +153,29 @@ def main():
             running_loss += loss.item()
 
             # (4.5)
-            _, preditc = torch.max(outputs, 1)
-            all_predict.extend(preditc.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            # Convert logits/ outputs to probabilities with sigmoid
+            probablity = torch.sigmoid(outputs)
+
+            # Convert probabilities to binary predictions (0 or 1) with default threshold 0.5
+            predictions = (probablity > 0.5).float()
 
         # (4.6)
-        accuracy  = accuracy_score(all_labels, all_predict)
-        precision = precision_score(all_labels, all_predict, average="binary")
-        recall    = recall_score(all_labels, all_predict, average="binary")
-        f1        = f1_score(all_labels, all_predict, average="binary")
+        # Create metric objects for accuracy, precision, and recall with threshold (float, default 0.5)
+        # threshold for converting input into predicted labels for each sample.
+        accuracy_mt  = torchmetrics.classification.BinaryAccuracy()
+        precision_mt = torchmetrics.classification.BinaryPrecision()
+        recall_mt    = torchmetrics.classification.BinaryRecall()
+
+        # Then, we need to update metrics with predictions and true labels
+        accuracy_mt.update(predictions, labels)
+        precision_mt.update(predictions, labels)
+        recall_mt.update(predictions, labels)
         avg_loss  = running_loss / len(train_loader)
+
+        # Finally, compute the evaluation metrics
+        accuracy  = accuracy_mt.compute()
+        precision = precision_mt.compute()
+        recall    = recall_mt.compute()
 
         # (4.7)
         epochs_list.append(epoch + 1)
@@ -170,10 +183,9 @@ def main():
         accuracies.append(accuracy)
         precisions.append(precision)
         recalls.append(recall)
-        f1_scores.append(f1)
 
         # call log model to log the evaluation metrics during training
-        log_model(epoch, avg_loss, accuracy, precision, recall, f1)
+        log_model(epoch, avg_loss, accuracy, precision, recall)
 
         # call plot model to provide plots of loss curves and other metrics in a dedicated folder
         plot_model(epochs_list, losses, accuracies, precisions, recalls, f1_scores)
