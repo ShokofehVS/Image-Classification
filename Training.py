@@ -75,8 +75,11 @@ def main():
 
     # (1)
     epochs_list, losses, accuracies, precisions, recalls, f1_scores = [], [], [], [], [], []
-    all_preds, all_labels =  [], []
+    all_predict, all_labels =  [], []
+    # We choose to have multiple epochs (10) that help the model learn better representations,
+    # but not stuck in overfitting or underfitting.
     epochs = 10
+    # Each epoch start with zero loss, then we calculate its loss during training
     running_loss = 0.0
 
     # (2)
@@ -85,8 +88,12 @@ def main():
         transforms.Resize((64, 64)),
         transforms.ToTensor()
     ])
+    # ImageFolder: help load dataset structured into class folders and apply transformation, it works
+    # well with DataLoader and do transformation efficiently
+    # DataLoader:  help load, batch and shuffle ImageFolder, while avoiding loading everything once into memory
+    # batch_size=32 is a hyperparameter balancing Memory Usage & Training Speed
     train_dataset = ImageFolder(root="Dataset/train", transform=transform)
-    train_loader  = DataLoader(train_dataset, batch_size=4, shuffle=True)
+    train_loader  = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
     # (3)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -96,17 +103,22 @@ def main():
     checkpoint_dir = "./checkpoints"
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    # Initialize variable to track the best loss
-    best_loss = float("inf")
+    # Initialize variable to track the best loss meaning the lowest amount during training for each epoch
+    # Since we want to find the smallest loss, starting with infinity (inf) ensures that any valid loss will be smaller
+    best_loss       = float("inf")
     best_model_path = ""
 
     # (1)
-    criterion = torch.nn.CrossEntropyLoss()
+    # We apply specific loss function for binary classification purposes that handles Sigmoid activation automatically;
+    # alternatively one can use CrossEntropyLoss function that is general for multi-class classification
+    # We apply Adam (Adaptive Moment Estimation) that automatically adjusts the learning rate for each parameter
+    # Learning rate = 0.001 is chosen to avoid making training unstable (e.g. lr = 0.01) or slow (e.g. lr = 0.00001)
+    criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # 4: start of the training process within 10 epochs which consists of
     # 4.1: train the model
-    # 4.2: move Data to the Device
+    # 4.2: move Data and labels to the Device
     # 4.3: core backpropagation and optimization process in PyTorch
     # 4.4: calculation of loss to then get the average in each epoch
     # 4.5: find predicted class with highest logit value
@@ -123,25 +135,33 @@ def main():
             images, labels = images.to(device), labels.to(device)
 
             # (4.3)
+            # This step is important in Adam optimizer. Incrementally, the gradients are accumulated
+            # after backward, forward passes to avoid gradient from previous batch affects current one.
             optimizer.zero_grad()
+            # We perform the forward pass and defines how the input image is transformed into
+            # the outputs that are logits or predicted values from the model.
             outputs = model(images)
+
             loss = criterion(outputs, labels)
+            # Here after setting gradient to zero in optimizer.zero_grad(), we calculate the gradient newly
+            # for the current batch
             loss.backward()
+            # Now by having the gradients computed in loss.backward(); we update the model weights
             optimizer.step()
 
             # (4.4)
             running_loss += loss.item()
 
             # (4.5)
-            _, preds = torch.max(outputs, 1)
-            all_preds.extend(preds.cpu().numpy())
+            _, preditc = torch.max(outputs, 1)
+            all_predict.extend(preditc.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
         # (4.6)
-        accuracy  = accuracy_score(all_labels, all_preds)
-        precision = precision_score(all_labels, all_preds, average="binary")
-        recall    = recall_score(all_labels, all_preds, average="binary")
-        f1        = f1_score(all_labels, all_preds, average="binary")
+        accuracy  = accuracy_score(all_labels, all_predict)
+        precision = precision_score(all_labels, all_predict, average="binary")
+        recall    = recall_score(all_labels, all_predict, average="binary")
+        f1        = f1_score(all_labels, all_predict, average="binary")
         avg_loss  = running_loss / len(train_loader)
 
         # (4.7)
